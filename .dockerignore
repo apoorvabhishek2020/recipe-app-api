@@ -1,0 +1,22 @@
+# Git
+.git
+.gitignore
+
+# Docker
+.docker
+
+# Python & Bytecode
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
+*/*/*/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environments & Caches
+.venv/
+venv/
+.env/
+.pytest_cache/
+.ruff_cache/
