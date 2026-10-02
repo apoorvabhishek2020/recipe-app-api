@@ -97,10 +97,12 @@ def main(arguments: Sequence[str] | None = None) -> int:
         if not config["enable_basedpyright"]:
             quality_console.message("basedpyright is disabled in quality.toml")
             return 1
-        pyright_targets = list(options.targets) or quality_paths
+        pyright_command = ["uv", "run", "basedpyright"]
+        if options.targets:
+            pyright_command.extend(options.targets)
         run_command(
             "static types analysis (basedpyright)",
-            ["uv", "run", "basedpyright", *pyright_targets],
+            pyright_command,
         )
     if run_default_gate or options.lint:
         run_command("linter analysis (ruff)", ["uv", "run", "ruff", "check", *targets])

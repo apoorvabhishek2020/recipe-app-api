@@ -1,5 +1,21 @@
 {
-  "include": ["app"],
+  "include": ["app", "runtests", "quality_console.py"],
+  "exclude": [
+    "**/manage.py",
+    "**/asgi.py",
+    "**/wsgi.py",
+    "**/settings.py",
+    "**/urls.py",
+    "**/migrations/**"
+  ],
+  "ignore": [
+    "**/manage.py",
+    "**/asgi.py",
+    "**/wsgi.py",
+    "**/settings.py",
+    "**/urls.py",
+    "**/migrations/**"
+  ],
   "pythonVersion": "3.14",
   "typeCheckingMode": "strict",
   "reportImplicitStringConcatenation": "error",

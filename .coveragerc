@@ -1,6 +1,15 @@
 [run]
 branch = true
+omit =
+    *manage.py
+    *asgi.py
+    *wsgi.py
+    *settings.py
+    *urls.py
+    */migrations/*
+    *tests/*
 
 [report]
 show_missing = true
 skip_covered = true
+

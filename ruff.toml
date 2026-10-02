@@ -2,7 +2,15 @@
 target-version = "py314"
 line-length = 88
 src = ["app"]
-extend-exclude = ["mutants", "*/migrations/*"]
+extend-exclude = [
+    "mutants",
+    "*/migrations/*",
+    "**/manage.py",
+    "**/settings.py",
+    "**/wsgi.py",
+    "**/asgi.py",
+    "**/urls.py",
+]
 
 [lint]
 select = ["ALL"]
@@ -12,6 +20,7 @@ ignore = [
     "D203",    # Use one blank line before class docstrings, not two.
     "D213",    # Put the summary on the first docstring line.
     "CPY001",  # This template does not force copyright headers.
+    "D104",    # Don't require docstrings in empty __init__.py package files.
     "S101",    # Pytest uses assert statements as its assertion API.
 ]
 
@@ -22,6 +31,12 @@ ignore = [
     "S603",    # Commands are fixed argument lists, not shell-expanded user input.
     "T201",    # The quality gate reports disabled checks and mutation survivors.
     "TC003",   # Runtime annotations are acceptable in this executable script.
+]
+"**/tests/*" = [
+    "D",       # Don't require full docstrings on every test function/package
+    "S101",    # Allow assert statements in tests
+    "PLR2004", # Allow magic numbers (like HTTP 200) in tests
+    "ANN201",  # Don't require return types on tests
 ]
 
 [format]
