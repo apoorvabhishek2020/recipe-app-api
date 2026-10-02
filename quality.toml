@@ -1,0 +1,24 @@
+# ============================================================================
+# Quality Gate Configuration (adapted from standard-python-cookbook)
+# ============================================================================
+
+# Python paths that Ruff and MyPy must check.
+source_paths = ["app"]
+
+# Quality-tool scripts that must also be checked. Do not remove.
+tool_paths = ["runtests", "quality_console.py"]
+
+# Test directories passed to pytest.
+test_paths = ["app"]
+
+# Paths measured by coverage.
+coverage_paths = ["app"]
+
+# Minimum required coverage percentage. ./runtests fails below this.
+coverage_threshold = 100
+
+# Optional second strict type checker. Run with: ./runtests --pyright
+enable_basedpyright = true
+
+# Optional mutation testing. Run with: ./runtests --mutations
+enable_mutation_tests = true

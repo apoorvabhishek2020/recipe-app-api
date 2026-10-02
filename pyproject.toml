@@ -1,7 +1,7 @@
 [project]
 name = "recipe-app-api"
 version = "0.1.0"
-description = "Add your description here"
+description = "Recipe App API Project"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
@@ -9,3 +9,21 @@ dependencies = [
     "djangorestframework>=3.18.1",
     "gunicorn>=26.2.0",
 ]
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.40.1",
+    "django-stubs>=6.1.1",
+    "hypothesis>=6.168.3",
+    "mutmut>=3.8.0",
+    "mypy>=2.4.0",
+    "pre-commit>=4.6.2",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "pytest-django>=4.14.0",
+    "ruff>=0.16.10",
+]
+

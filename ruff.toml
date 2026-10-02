@@ -1,0 +1,29 @@
+# Formatter and linter rules. Strict by default: every Ruff rule is selected.
+target-version = "py314"
+line-length = 88
+src = ["app"]
+extend-exclude = ["mutants", "*/migrations/*"]
+
+[lint]
+select = ["ALL"]
+ignore = [
+    "COM812",  # Conflicts with the Ruff formatter.
+    "ISC001",  # Conflicts with the Ruff formatter.
+    "D203",    # Use one blank line before class docstrings, not two.
+    "D213",    # Put the summary on the first docstring line.
+    "CPY001",  # This template does not force copyright headers.
+    "S101",    # Pytest uses assert statements as its assertion API.
+]
+
+[lint.per-file-ignores]
+"runtests" = [
+    "C901",    # The command dispatcher is intentionally one small CLI entrypoint.
+    "PLR0915", # The command dispatcher stays explicit so the gate order is easy to read.
+    "S603",    # Commands are fixed argument lists, not shell-expanded user input.
+    "T201",    # The quality gate reports disabled checks and mutation survivors.
+    "TC003",   # Runtime annotations are acceptable in this executable script.
+]
+
+[format]
+quote-style = "double"
+indent-style = "space"

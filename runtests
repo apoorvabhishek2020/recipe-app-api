@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""Run the project quality gate."""
+
+from __future__ import annotations
+
+import argparse
+import shutil
+import subprocess
+import sys
+import tomllib
+from collections.abc import Sequence
+from pathlib import Path
+from typing import Any, TypedDict
+
+import quality_console
+
+
+class QualityConfig(TypedDict):
+    """Project-specific paths used by the quality gate."""
+
+    source_paths: list[str]
+    tool_paths: list[str]
+    test_paths: list[str]
+    coverage_paths: list[str]
+    coverage_threshold: int
+    enable_basedpyright: bool
+    enable_mutation_tests: bool
+
+
+def main(arguments: Sequence[str] | None = None) -> int:
+    """Run selected quality checks and return a process exit code."""
+    parser = argparse.ArgumentParser(description="Run project quality checks.")
+    parser.add_argument(
+        "targets",
+        nargs="*",
+        help="Optional files or folders to check.",
+    )
+    parser.add_argument("-k", "--keep", help="Only run tests matching this expression.")
+    parser.add_argument("--tests", action="store_true", help="Run unit tests.")
+    parser.add_argument("--types", action="store_true", help="Run MyPy.")
+    parser.add_argument("--pyright", action="store_true", help="Run basedpyright.")
+    parser.add_argument(
+        "--lint",
+        "--linter",
+        action="store_true",
+        help="Run Ruff lint checks.",
+    )
+    parser.add_argument(
+        "--format",
+        "--style",
+        action="store_true",
+        help="Run Ruff format checks.",
+    )
+    parser.add_argument("--mutations", action="store_true", help="Run mutation tests.")
+    options = parser.parse_args(arguments)
+
+    selected = any(
+        (
+            options.tests,
+            options.types,
+            options.pyright,
+            options.lint,
+            options.format,
+            options.mutations,
+            options.keep,
+        )
+    )
+    run_default_gate = not selected
+    config = load_quality_config()
+    quality_paths = [*config["source_paths"], *config["tool_paths"]]
+    targets = list(options.targets) or quality_paths
+
+    if run_default_gate or options.tests or options.keep:
+        pytest_targets = list(options.targets) or config["test_paths"]
+        pytest_command = ["uv", "run", "pytest", *pytest_targets]
+        pytest_command.extend(
+            f"--cov={coverage_path}" for coverage_path in config["coverage_paths"]
+        )
+        pytest_command.extend(
+            (
+                "--cov-branch",
+                "--cov-report=term-missing:skip-covered",
+                "--cov-report=html",
+                f"--cov-fail-under={config['coverage_threshold']}",
+            ),
+        )
+        if options.keep is not None:
+            pytest_command.extend(("-k", options.keep))
+        run_command("unit tests (pytest)", pytest_command)
+    if run_default_gate or options.types:
+        type_targets = list(options.targets) or quality_paths
+        run_command(
+            "static types analysis (mypy)",
+            ["uv", "run", "mypy", *type_targets],
+        )
+    if options.pyright:
+        if not config["enable_basedpyright"]:
+            quality_console.message("basedpyright is disabled in quality.toml")
+            return 1
+        pyright_targets = list(options.targets) or quality_paths
+        run_command(
+            "static types analysis (basedpyright)",
+            ["uv", "run", "basedpyright", *pyright_targets],
+        )
+    if run_default_gate or options.lint:
+        run_command("linter analysis (ruff)", ["uv", "run", "ruff", "check", *targets])
+    if run_default_gate or options.format:
+        run_command(
+            "formatting check (ruff)",
+            ["uv", "run", "ruff", "format", "--check", *targets],
+        )
+    if options.mutations:
+        if not config["enable_mutation_tests"]:
+            quality_console.message("mutation testing is disabled in quality.toml")
+            return 1
+        shutil.rmtree("mutants", ignore_errors=True)
+        run_command("mutation testing (mutmut)", ["uv", "run", "mutmut", "run"])
+        mutation_results = capture_command(
+            "mutation results (mutmut)",
+            ["uv", "run", "mutmut", "results"],
+        )
+        if mutation_results.strip() != "":
+            quality_console.message(mutation_results.rstrip())
+            return 1
+
+    return 0
+
+
+def load_quality_config() -> QualityConfig:
+    """Load quality gate paths from quality.toml."""
+    config_path = Path("quality.toml")
+    raw_config: dict[str, Any] = tomllib.loads(config_path.read_text())
+    return QualityConfig(
+        source_paths=list(raw_config.get("source_paths", ["app"])),
+        tool_paths=list(
+            raw_config.get("tool_paths", ["runtests", "quality_console.py"]),
+        ),
+        test_paths=list(raw_config.get("test_paths", ["app"])),
+        coverage_paths=list(raw_config.get("coverage_paths", ["app"])),
+        coverage_threshold=int(raw_config.get("coverage_threshold", 100)),
+        enable_basedpyright=bool(raw_config.get("enable_basedpyright", True)),
+        enable_mutation_tests=bool(raw_config.get("enable_mutation_tests", True)),
+    )
+
+
+def run_command(title: str, command: Sequence[str]) -> None:
+    """Run a subprocess command and stop immediately on failure."""
+    with quality_console.section(title, command):
+        completed_process = subprocess.run(command, check=False)
+        if completed_process.returncode != 0:
+            raise SystemExit(completed_process.returncode)
+
+
+def capture_command(title: str, command: Sequence[str]) -> str:
+    """Run a subprocess command and return its standard output."""
+    with quality_console.section(title, command):
+        completed_process = subprocess.run(
+            command,
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        if completed_process.returncode != 0:
+            raise SystemExit(completed_process.returncode)
+    return completed_process.stdout
+
+
+if __name__ == "__main__":
+    sys.exit(main())
